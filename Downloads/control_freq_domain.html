@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Domain vs Frequency Domain — Control Theory to Modern Robotics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500&family=Source+Serif+4:opsz,wght@8..60,300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--bg2:#0f1626;--bg3:#141d30;--card:#111827;--border:#1e2d4a;--accent:#3b82f6;--accent2:#60a5fa;--gold:#f59e0b;--green:#10b981;--red:#ef4444;--purple:#8b5cf6;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--mono:'JetBrains Mono',monospace;--serif:'Source Serif 4',Georgia,serif;--display:'Playfair Display',Georgia,serif}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--serif);font-size:17px;line-height:1.75;overflow-x:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:3rem 2rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(59,130,246,.08) 0%,transparent 70%),repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(30,45,74,.3) 40px,rgba(30,45,74,.3) 41px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(30,45,74,.3) 40px,rgba(30,45,74,.3) 41px);pointer-events:none}
+.hero-tag{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;border:1px solid var(--accent);padding:.3rem 1rem;border-radius:2px;margin-bottom:2rem}
+.hero h1{font-family:var(--display);font-size:clamp(2.2rem,5vw,4rem);font-weight:900;line-height:1.15;max-width:900px;margin-bottom:1.5rem;color:#fff}
+.hero h1 em{font-style:normal;color:var(--accent2)}
+.hero p{max-width:640px;color:var(--text2);font-size:1.05rem;margin-bottom:2.5rem}
+.hero-badges{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-bottom:3rem}
+.badge{font-family:var(--mono);font-size:.7rem;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:.25rem .8rem;border-radius:100px;letter-spacing:.05em}
+.scroll-hint{font-family:var(--mono);font-size:.7rem;color:var(--text3);letter-spacing:.1em;animation:bounce 2s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+nav{position:sticky;top:0;z-index:100;background:rgba(10,14,26,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;overflow-x:auto;white-space:nowrap}
+nav ul{display:inline-flex;gap:0;list-style:none;margin:0;padding:0}
+nav ul li a{font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;color:var(--text3);text-decoration:none;padding:.85rem 1rem;display:inline-block;transition:color .2s;border-bottom:2px solid transparent}
+nav ul li a:hover{color:var(--accent2);border-bottom-color:var(--accent2)}
+main{max-width:960px;margin:0 auto;padding:3rem 1.5rem 6rem}
+section{margin-bottom:4rem;scroll-margin-top:60px}
+.section-label{font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:.5rem}
+h2{font-family:var(--display);font-size:clamp(1.6rem,3vw,2.2rem);font-weight:700;color:#fff;margin-bottom:1.25rem;line-height:1.2}
+h3{font-family:var(--display);font-size:1.25rem;font-weight:600;color:var(--accent2);margin:1.5rem 0 .75rem}
+p{margin-bottom:1rem;color:var(--text2)}
+strong{color:var(--text)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem 1.75rem;margin:1.5rem 0}
+.intuition{background:linear-gradient(135deg,rgba(59,130,246,.06) 0%,rgba(96,165,250,.03) 100%);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:1rem 1.4rem;margin:1.5rem 0}
+.intuition .label{font-family:var(--mono);font-size:.65rem;letter-spacing:.15em;color:var(--accent);text-transform:uppercase;margin-bottom:.4rem}
+.intuition p{margin:0;color:var(--text)}
+.example-box{background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.2);border-radius:6px;padding:1rem 1.4rem;margin:1.5rem 0}
+.example-box .label{font-family:var(--mono);font-size:.65rem;letter-spacing:.15em;color:var(--green);text-transform:uppercase;margin-bottom:.4rem}
+.example-box p{margin:0}
+.eq{font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.6rem 1.2rem;display:block;margin:.8rem 0;color:var(--gold);font-size:.92rem;overflow-x:auto;white-space:nowrap}
+.eq-inline{font-family:var(--mono);color:var(--gold);background:rgba(245,158,11,.07);padding:.1em .4em;border-radius:3px;font-size:.9em}
+.table-wrap{overflow-x:auto;margin:1.5rem 0}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+thead th{background:var(--bg3);color:var(--accent2);font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;padding:.8rem 1rem;text-align:left;border-bottom:2px solid var(--accent)}
+tbody td{padding:.7rem 1rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top}
+tbody tr:hover td{background:rgba(59,130,246,.04)}
+td:first-child{color:var(--text);font-weight:600;font-family:var(--mono);font-size:.82rem}
+.interactive-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.75rem;margin:2rem 0}
+.panel-title{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem}
+.panel-title::before{content:'';width:8px;height:8px;background:var(--accent);border-radius:50%;display:inline-block;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.controls-row{display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.25rem;align-items:flex-end}
+.control-group{display:flex;flex-direction:column;gap:.3rem;min-width:160px}
+.control-group label{font-family:var(--mono);font-size:.7rem;color:var(--text2);letter-spacing:.05em}
+.control-group label span{color:var(--gold);font-weight:500;margin-left:.4rem}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(59,130,246,.6)}
+canvas{width:100%;border-radius:6px;background:#080c16;display:block}
+.canvas-label{font-family:var(--mono);font-size:.65rem;color:var(--text3);text-align:center;margin-top:.4rem;letter-spacing:.05em}
+.status-text{font-family:var(--mono);font-size:.78rem;color:var(--green);background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:4px;padding:.5rem .8rem;margin-top:.8rem}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:640px){.two-col{grid-template-columns:1fr}}
+.hierarchy{display:flex;flex-direction:column;gap:0;margin:1.5rem 0}
+.h-level{padding:.9rem 1.4rem;border-left:3px solid var(--border);transition:background .2s}
+.h-level:hover{background:rgba(255,255,255,.02)}
+.h-level:nth-child(1){border-color:var(--purple)}
+.h-level:nth-child(2){border-color:var(--accent)}
+.h-level:nth-child(3){border-color:var(--green)}
+.h-tag{font-family:var(--mono);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.25rem}
+.h-level:nth-child(1) .h-tag{color:var(--purple)}
+.h-level:nth-child(2) .h-tag{color:var(--accent2)}
+.h-level:nth-child(3) .h-tag{color:var(--green)}
+.h-desc{color:var(--text2);font-size:.95rem}
+.takeaway{background:linear-gradient(135deg,#0f1e38 0%,#0f2030 100%);border:1px solid rgba(59,130,246,.3);border-radius:10px;padding:2.5rem;text-align:center;margin:3rem 0;position:relative;overflow:hidden}
+.takeaway::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,.08) 0%,transparent 70%);pointer-events:none}
+.takeaway h2{font-size:1.6rem;margin-bottom:1.5rem;color:var(--accent2)}
+.takeaway p{font-size:1rem;max-width:680px;margin:0 auto .8rem;color:var(--text2)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">Engineering Education Series</div>
+  <h1>Time Domain vs <em>Frequency Domain</em> Analysis</h1>
+  <p>From Classical Control Theory to Modern Robotics and Vision-Language-Action Systems — an interactive guide for engineering students.</p>
+  <div class="hero-badges">
+    <span class="badge">Control Systems</span>
+    <span class="badge">Signal Processing</span>
+    <span class="badge">Robotics</span>
+    <span class="badge">Bode Analysis</span>
+    <span class="badge">VLA Systems</span>
+    <span class="badge">Interactive Plots</span>
+  </div>
+  <div class="scroll-hint">↓ scroll to explore ↓</div>
+</div>
+
+<nav>
+  <ul>
+    <li><a href="#intro">Introduction</a></li>
+    <li><a href="#time">Time Domain</a></li>
+    <li><a href="#limits">Limitations</a></li>
+    <li><a href="#freq">Freq Domain</a></li>
+    <li><a href="#bode-mag">Bode Magnitude</a></li>
+    <li><a href="#bode-phase">Phase &amp; Margin</a></li>
+    <li><a href="#compare">Comparison</a></li>
+    <li><a href="#rc">RC Circuit</a></li>
+    <li><a href="#msd">Mass-Spring</a></li>
+    <li><a href="#robot">Robot Joint</a></li>
+    <li><a href="#vla">VLA Systems</a></li>
+    <li><a href="#takeaway">Takeaway</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<section id="intro">
+  <div class="section-label">§ 1 — Introduction</div>
+  <h2>Why Analyze Systems in Two Domains?</h2>
+  <p>Every physical system — a robot arm, an electric circuit, a mechanical spring — can be studied from two fundamentally different perspectives. <strong>Neither is more correct.</strong> They are complementary windows into the same physical reality.</p>
+  <div class="two-col">
+    <div class="card">
+      <div class="section-label" style="color:var(--accent)">Time Domain</div>
+      <h3 style="margin-top:.5rem;color:var(--text)">"How does the output evolve <em style="color:var(--accent2)">with time</em> after an input is applied?"</h3>
+      <p>You apply a force, a voltage, or a command — and you watch what happens next. Does the system overshoot? Oscillate? Settle quickly?</p>
+    </div>
+    <div class="card">
+      <div class="section-label" style="color:var(--purple)">Frequency Domain</div>
+      <h3 style="margin-top:.5rem;color:var(--text)">"How does the system respond to <em style="color:var(--purple)">sinusoidal inputs</em> at every frequency?"</h3>
+      <p>You sweep through frequencies and ask: which ones pass through? Which are blocked? By how much? With what delay?</p>
+    </div>
+  </div>
+  <h3>The Transfer Function Bridge</h3>
+  <p>For a linear time-invariant (LTI) system, the <strong>transfer function</strong> connects input to output in the Laplace domain:</p>
+  <code class="eq">G(s) = Y(s) / U(s)</code>
+  <p>To obtain the <strong>frequency response</strong>, substitute <span class="eq-inline">s = jω</span> (where <span class="eq-inline">j = √−1</span> and <span class="eq-inline">ω</span> is angular frequency in rad/s):</p>
+  <code class="eq">G(jω) = frequency response at angular frequency ω</code>
+  <div class="intuition">
+    <div class="label">💡 Key Insight</div>
+    <p>The Laplace variable <span class="eq-inline">s</span> encodes both transient behavior (exponential growth/decay) and oscillatory behavior (via <span class="eq-inline">jω</span>). Evaluating <span class="eq-inline">G(s)</span> on the imaginary axis <span class="eq-inline">s = jω</span> extracts only the steady-state sinusoidal response — this is the frequency domain.</p>
+  </div>
+</section>
+
+<section id="time">
+  <div class="section-label">§ 2 — Time Domain Analysis</div>
+  <h2>Observing How Systems Evolve in Time</h2>
+  <p>Time-domain analysis is the most intuitive approach: apply a known input and watch the output unfold. The most common test is the <strong>step response</strong> — a sudden jump from 0 to a constant value.</p>
+  <h3>Key Time-Domain Metrics</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>Definition</th><th>Physical Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Rise Time t_r</td><td>Time to go from 10% to 90% of final value</td><td>How fast the system initially responds</td></tr>
+        <tr><td>Settling Time t_s</td><td>Time to stay within ±2% of final value</td><td>When the transient effectively dies out</td></tr>
+        <tr><td>Overshoot %OS</td><td>(Peak − Final) / Final × 100%</td><td>How much the output exceeds the target</td></tr>
+        <tr><td>Steady-State Error</td><td>Difference between output and reference at t→∞</td><td>Long-term tracking accuracy</td></tr>
+        <tr><td>Damping Ratio ζ</td><td>Controls oscillation intensity</td><td>ζ&lt;1: oscillates; ζ=1: critical; ζ&gt;1: slow</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="example-box">
+    <div class="label">🤖 Robotics Example</div>
+    <p>A robot arm joint is commanded from 0° to 30°. In the time domain, we observe: does it reach 30° quickly? Does it overshoot to 35° and oscillate? Does it creep up slowly? Each behavior reveals damping and responsiveness.</p>
+  </div>
+  <h3>Second-Order System Model</h3>
+  <p>Most physical systems can be approximated as second-order. The canonical transfer function is:</p>
+  <code class="eq">G(s) = ω_n² / (s² + 2ζω_n·s + ω_n²)</code>
+  <p>where <span class="eq-inline">ω_n</span> is the <strong>natural frequency</strong> (rad/s) and <span class="eq-inline">ζ</span> is the <strong>damping ratio</strong> (dimensionless).</p>
+  <div class="interactive-panel">
+    <div class="panel-title">Interactive — Step Response</div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Damping ratio ζ <span id="zeta-val">0.5</span></label>
+        <input type="range" id="zeta" min="0.05" max="2.0" step="0.05" value="0.5">
+      </div>
+      <div class="control-group">
+        <label>Natural freq ω_n <span id="wn-val">2.0</span> rad/s</label>
+        <input type="range" id="wn" min="0.5" max="8.0" step="0.1" value="2.0">
+      </div>
+    </div>
+    <canvas id="stepCanvas" height="260"></canvas>
+    <div class="canvas-label">Step response y(t) — unit step input applied at t = 0</div>
+    <div class="status-text" id="stepStatus">System: Underdamped (oscillatory)</div>
+  </div>
+</section>
+
+<section id="limits">
+  <div class="section-label">§ 3 — Limitations of Time-Domain Analysis</div>
+  <h2>The Blind Spots of Time-Domain Analysis</h2>
+  <p>Time-domain plots are wonderfully physical and intuitive. But they hide important information:</p>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div>
+        <p><strong>✗ Frequency selectivity</strong> — Which frequencies are amplified or attenuated? Unreadable from a step response.</p>
+        <p><strong>✗ Noise sensitivity</strong> — Does the system amplify sensor noise? High-frequency noise may be invisible in a step test.</p>
+        <p><strong>✗ Phase lag at frequency</strong> — How much does output lag input at 10 Hz? 100 Hz? Unknown from time domain alone.</p>
+      </div>
+      <div>
+        <p><strong>✗ Stability margins</strong> — How close is the feedback loop to instability? Gain and phase margins are frequency-domain concepts.</p>
+        <p><strong>✗ Resonance peaks</strong> — A system may look fine in a step test but hide a dangerous resonance at some frequency.</p>
+        <p><strong>✗ Bandwidth</strong> — The highest trackable frequency is not visible from a single step response.</p>
+      </div>
+    </div>
+  </div>
+  <div class="example-box">
+    <div class="label">⚠️ Critical Robotics Example</div>
+    <p>A robot arm tracks a slow ramp command beautifully in simulation. But in reality, high-frequency vibration from the motor gearbox excites a resonance at 40 Hz, causing violent oscillation. This would never be caught from a step-response test alone — it requires frequency-domain analysis.</p>
+  </div>
+</section>
+
+<section id="freq">
+  <div class="section-label">§ 4 — Frequency Domain Analysis</div>
+  <h2>Studying How Systems Treat Each Frequency</h2>
+  <p>Instead of asking "what happens after a step?", we ask: "if I feed a pure sinusoid at frequency <span class="eq-inline">ω</span>, what does the output look like in steady state?"</p>
+  <code class="eq">Input:  u(t) = A · sin(ωt)</code>
+  <code class="eq">Output: y(t) = A · |G(jω)| · sin(ωt + ∠G(jω))</code>
+  <p>For any LTI system, the output is also a sinusoid at the same frequency — but with changed amplitude and shifted phase:</p>
+  <div class="two-col">
+    <div class="card" style="border-color:rgba(245,158,11,.3)">
+      <div style="font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;color:var(--gold);margin-bottom:.5rem">MAGNITUDE</div>
+      <code class="eq" style="background:transparent;border:none;padding:.2rem 0;font-size:1rem">|G(jω)|</code>
+      <p style="margin-top:.5rem;font-size:.9rem">Ratio of output to input amplitude. If <span class="eq-inline">|G(jω)| > 1</span>, that frequency is amplified. If <span class="eq-inline">< 1</span>, it is attenuated.</p>
+    </div>
+    <div class="card" style="border-color:rgba(139,92,246,.3)">
+      <div style="font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;color:var(--purple);margin-bottom:.5rem">PHASE</div>
+      <code class="eq" style="background:transparent;border:none;padding:.2rem 0;font-size:1rem">∠G(jω)</code>
+      <p style="margin-top:.5rem;font-size:.9rem">Phase shift between input and output. Negative value means output <em>lags</em> behind input — critical for feedback stability.</p>
+    </div>
+  </div>
+  <div class="intuition">
+    <div class="label">💡 Why This Matters Deeply</div>
+    <p>Every real-world signal can be decomposed into sinusoids (Fourier's theorem). If you know how your system treats every sinusoid, you know everything about how it treats every possible input. The frequency response is a <strong>complete characterization</strong> of an LTI system.</p>
+  </div>
+</section>
+
+<section id="bode-mag">
+  <div class="section-label">§ 5 — Bode Magnitude Plot</div>
+  <h2>Mapping Gain Across All Frequencies</h2>
+  <p>A <strong>Bode magnitude plot</strong> displays the gain of a system versus frequency on a log-log scale.</p>
+  <code class="eq">Magnitude in dB = 20 · log₁₀ |G(jω)|</code>
+  <div class="intuition">
+    <div class="label">💡 Why decibels?</div>
+    <p>Gain of 1 (no change) = 0 dB. Gain of 10 = 20 dB. Gain of 0.1 = −20 dB. The log scale compresses large dynamic ranges and makes cascaded gains additive: <span class="eq-inline">dB_total = dB_1 + dB_2</span>.</p>
+  </div>
+  <h3>First-Order Low-Pass Example</h3>
+  <p>An RC circuit or mechanical dashpot follows:</p>
+  <code class="eq">G(s) = 1 / (τs + 1)   ⟹   G(jω) = 1 / (1 + jωτ)</code>
+  <p>Corner frequency at <span class="eq-inline">ω_c = 1/τ</span>. Below this: signals pass unchanged. Above it: attenuation at −20 dB/decade.</p>
+  <div class="interactive-panel">
+    <div class="panel-title">Interactive — Bode Plot (Magnitude + Phase)</div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Damping ratio ζ <span id="bode-zeta-val">0.3</span></label>
+        <input type="range" id="bode-zeta" min="0.05" max="2.0" step="0.05" value="0.3">
+      </div>
+      <div class="control-group">
+        <label>Natural freq ω_n <span id="bode-wn-val">5.0</span> rad/s</label>
+        <input type="range" id="bode-wn" min="0.5" max="20.0" step="0.5" value="5.0">
+      </div>
+    </div>
+    <canvas id="bodeMagCanvas" height="210"></canvas>
+    <div class="canvas-label">Bode Magnitude: 20·log₁₀|G(jω)| vs ω (log scale)</div>
+    <canvas id="bodePhaseCanvas" height="160" style="margin-top:.75rem"></canvas>
+    <div class="canvas-label">Bode Phase: ∠G(jω) vs ω (log scale)</div>
+    <div class="status-text" id="bodeStatus">Resonance peak visible — low damping amplifies near ω_n</div>
+  </div>
+  <h3>What the Magnitude Plot Reveals</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Feature</th><th>What to Look For</th><th>Engineering Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>Low-freq gain</td><td>Gain as ω→0</td><td>DC tracking accuracy, steady-state following</td></tr>
+        <tr><td>Bandwidth</td><td>Frequency where gain drops to −3 dB</td><td>Highest frequency faithfully tracked</td></tr>
+        <tr><td>Resonance peak</td><td>Local maximum above 0 dB</td><td>Frequency where system amplifies inputs — danger zone</td></tr>
+        <tr><td>Roll-off slope</td><td>−20/−40/−60 dB/decade</td><td>How aggressively high-freq signals are rejected</td></tr>
+        <tr><td>High-freq gain</td><td>Gain as ω→∞</td><td>Noise rejection capability</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="bode-phase">
+  <div class="section-label">§ 6 — Bode Phase Plot and Stability Margins</div>
+  <h2>Measuring Delay Across Frequencies</h2>
+  <p>The phase plot shows how much the output lags behind the input at each frequency. Phase lag is always negative for stable causal systems (output comes after input).</p>
+  <div class="example-box">
+    <div class="label">🤖 Robotics Example — Why Phase Matters</div>
+    <p>A robot joint controller receives a position sensor signal. If there is 180° of phase lag at the feedback loop's crossover frequency, the corrective action arrives exactly out-of-phase — it makes the error worse, not better. This is how feedback loops go unstable.</p>
+  </div>
+  <h3>Phase Margin — The Stability Buffer</h3>
+  <p><strong>Phase margin (PM)</strong> is how many additional degrees of phase lag the system can tolerate before going unstable:</p>
+  <code class="eq">Phase Margin = 180° + ∠G(jω_gc)   where |G(jω_gc)| = 1 (0 dB crossover)</code>
+  <p>PM = 45° is a healthy stability buffer. PM &lt; 20° is dangerously close to instability. PM = 0° means the system is on the verge of sustained oscillation.</p>
+  <div class="intuition">
+    <div class="label">💡 Physical Intuition</div>
+    <p>Phase lag accumulates from every sensor delay, computational delay, actuator lag, and dynamic element in the feedback loop. In modern robotics, even a few milliseconds of computation add phase lag at high frequencies: <span class="eq-inline">ΔΦ = −ω · T_delay</span>. This is why real-time control loops run at 1 kHz or faster.</p>
+  </div>
+</section>
+
+<section id="compare">
+  <div class="section-label">§ 7 — Side-by-Side Comparison</div>
+  <h2>Time Domain vs Frequency Domain</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Aspect</th><th style="color:var(--accent2)">Time Domain</th><th style="color:var(--purple)">Frequency Domain</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Primary question</td><td>What does the output look like over time?</td><td>How does the system treat each frequency?</td></tr>
+        <tr><td>Horizontal axis</td><td>Time (seconds)</td><td>Frequency (rad/s or Hz)</td></tr>
+        <tr><td>Best for</td><td>Transient response, trajectory verification</td><td>Robustness, noise rejection, stability margins</td></tr>
+        <tr><td>Metrics revealed</td><td>Rise time, settling time, overshoot, SS error</td><td>Bandwidth, gain margin, phase margin, resonance</td></tr>
+        <tr><td>Stability analysis</td><td>Eigenvalue / pole locations (via math)</td><td>Direct visual: Bode, Nyquist, Nichols charts</td></tr>
+        <tr><td>Noise sensitivity</td><td>Not directly visible</td><td>Directly visible as high-frequency gain</td></tr>
+        <tr><td>Feedback design</td><td>State-space, LQR, pole placement</td><td>Loop shaping, PID tuning via phase margin</td></tr>
+        <tr><td>Robotics use</td><td>Validating physical motion, trajectories</td><td>Actuator bandwidth, vibration rejection, delay</td></tr>
+        <tr><td>VLA relevance</td><td>High-level semantic actions over time</td><td>Low-level control bandwidth, noise, actuation limits</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="rc">
+  <div class="section-label">§ 8 — Example 1: RC Circuit</div>
+  <h2>The Same System, Two Perspectives</h2>
+  <p>An RC circuit is the simplest dynamic system with one pole. Let's examine it from both domains.</p>
+  <div class="two-col">
+    <div class="card">
+      <div class="section-label" style="color:var(--accent)">Time Domain</div>
+      <p>After a step voltage <span class="eq-inline">V₀</span> is applied, the capacitor charges exponentially:</p>
+      <code class="eq">v_C(t) = V₀(1 − e^(−t/RC))</code>
+      <p>Time constant <span class="eq-inline">τ = RC</span>: after one τ the capacitor is 63% charged; after 5τ it is essentially full.</p>
+    </div>
+    <div class="card">
+      <div class="section-label" style="color:var(--purple)">Frequency Domain</div>
+      <p>Transfer function and frequency response:</p>
+      <code class="eq">G(s) = 1 / (RCs + 1)</code>
+      <code class="eq">G(jω) = 1 / (1 + jωRC)</code>
+      <p>This is a <strong>low-pass filter</strong>. Slow signals (low ω) pass through; fast signals (high ω) are blocked.</p>
+    </div>
+  </div>
+  <div class="intuition">
+    <div class="label">💡 Same System, Different Stories</div>
+    <p>In time domain, you see a capacitor charging curve. In frequency domain, you see a filter cutting off high-frequency signals. Both are true descriptions of the same RC circuit. The first is useful for startup behavior; the second reveals noise rejection capability.</p>
+  </div>
+</section>
+
+<section id="msd">
+  <div class="section-label">§ 9 — Example 2: Mass-Spring-Damper</div>
+  <h2>Mechanical Resonance in Two Domains</h2>
+  <p>The mass-spring-damper is the universal mechanical model — it applies to robot joints, vehicle suspensions, flexible structures, and more.</p>
+  <code class="eq">m·ẍ + c·ẋ + k·x = F(t)</code>
+  <code class="eq">G(s) = X(s)/F(s) = 1 / (ms² + cs + k)</code>
+  <code class="eq">ω_n = √(k/m)   ,   ζ = c / (2√(km))</code>
+  <div class="interactive-panel">
+    <div class="panel-title">Interactive — Mass-Spring-Damper Resonance</div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Damping ratio ζ <span id="msd-zeta-val">0.1</span></label>
+        <input type="range" id="msd-zeta" min="0.05" max="2.0" step="0.05" value="0.1">
+      </div>
+      <div class="control-group">
+        <label>Natural freq ω_n <span id="msd-wn-val">5.0</span> rad/s</label>
+        <input type="range" id="msd-wn" min="1.0" max="20.0" step="0.5" value="5.0">
+      </div>
+    </div>
+    <canvas id="msdCanvas" height="230"></canvas>
+    <div class="canvas-label">Frequency response magnitude — resonance peak at ω ≈ ω_n for low ζ</div>
+    <div class="status-text" id="msdStatus">Resonance peak prominent — low ζ means the system amplifies forces near ω_n</div>
+  </div>
+  <div class="example-box">
+    <div class="label">📐 Physical Interpretation</div>
+    <p>When a robot arm applies forces near the natural frequency of a coupled load (e.g., a flexible link or payload on a spring mount), those forces are amplified by resonance. In time domain, this appears as violent oscillation that builds up. Frequency domain reveals the exact danger zone frequency and required damping.</p>
+  </div>
+</section>
+
+<section id="robot">
+  <div class="section-label">§ 10 — Example 3: Robot Joint Control</div>
+  <h2>Closed-Loop Control of a Motorized Joint</h2>
+  <p>A robot joint is controlled by a motor, position sensor, and feedback controller. This closed-loop system requires <em>both</em> analysis domains.</p>
+  <div class="two-col">
+    <div class="card">
+      <div class="section-label" style="color:var(--accent)">Time-Domain Questions</div>
+      <p>→ Does the joint reach the target angle?</p>
+      <p>→ How much does it overshoot?</p>
+      <p>→ How long until it settles?</p>
+      <p>→ Is there steady-state error?</p>
+      <p>→ Does it follow a trajectory accurately?</p>
+    </div>
+    <div class="card">
+      <div class="section-label" style="color:var(--purple)">Frequency-Domain Questions</div>
+      <p>→ Can the joint track 10 Hz commands?</p>
+      <p>→ Does it amplify 200 Hz motor vibration?</p>
+      <p>→ How much phase lag at the crossover frequency?</p>
+      <p>→ What are the gain and phase margins?</p>
+      <p>→ Is it robust to 5 ms computation delay?</p>
+    </div>
+  </div>
+  <div class="intuition">
+    <div class="label">💡 The Rule of Thumb in Robotics Control</div>
+    <p>Time domain validates: <em>"Does the motion look correct?"</em> Frequency domain validates: <em>"Is the controller robust and noise-tolerant?"</em> A production robot controller needs both. A system that passes time-domain tests can still fail catastrophically in the field due to unmodeled resonances or sensor noise amplification.</p>
+  </div>
+</section>
+
+<section id="vla">
+  <div class="section-label">§ 11 — Modern Robotics and VLA Systems</div>
+  <h2>From Classical Control to Neural Robot Brains</h2>
+  <p><strong>Vision-Language-Action (VLA) systems</strong> are a new class of robot controllers where a large neural network — trained on vision, language, and demonstration data — directly produces robot actions from visual observations and natural language instructions.</p>
+  <p>Examples: Google RT-2, OpenVLA, π₀ from Physical Intelligence. These systems accept plain language: <em>"Pick up the red cup and place it on the plate."</em></p>
+  <h3>But the Physics Does Not Change</h3>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.8rem">
+      <div style="text-align:center;padding:.8rem;background:var(--bg3);border-radius:6px">
+        <div style="font-size:1.5rem;margin-bottom:.3rem">⚙️</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent2);margin-bottom:.3rem">ACTUATORS</div>
+        <div style="font-size:.82rem;color:var(--text2)">Bandwidth limits, current limits, gear resonances</div>
+      </div>
+      <div style="text-align:center;padding:.8rem;background:var(--bg3);border-radius:6px">
+        <div style="font-size:1.5rem;margin-bottom:.3rem">📡</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent2);margin-bottom:.3rem">SENSORS</div>
+        <div style="font-size:.82rem;color:var(--text2)">Finite frame rates, noise floors, quantization</div>
+      </div>
+      <div style="text-align:center;padding:.8rem;background:var(--bg3);border-radius:6px">
+        <div style="font-size:1.5rem;margin-bottom:.3rem">⏱️</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent2);margin-bottom:.3rem">DELAYS</div>
+        <div style="font-size:.82rem;color:var(--text2)">Inference latency, communication delay, ZOH</div>
+      </div>
+      <div style="text-align:center;padding:.8rem;background:var(--bg3);border-radius:6px">
+        <div style="font-size:1.5rem;margin-bottom:.3rem">🔄</div>
+        <div style="font-family:var(--mono);font-size:.7rem;color:var(--accent2);margin-bottom:.3rem">FEEDBACK</div>
+        <div style="font-size:.82rem;color:var(--text2)">Closed-loop stability margins, disturbance rejection</div>
+      </div>
+    </div>
+  </div>
+  <h3>The Control Hierarchy</h3>
+  <div class="hierarchy">
+    <div class="h-level">
+      <div class="h-tag">Level 3 — Semantic / Planning (VLA)</div>
+      <div class="h-desc"><strong>"Pick up the cup."</strong> — Vision transformer + language model generates action tokens or waypoints. Operates at ~5–30 Hz. Uses neural networks trained on demonstrations.</div>
+    </div>
+    <div class="h-level">
+      <div class="h-tag">Level 2 — Motion Planning</div>
+      <div class="h-desc"><strong>"Move end-effector along this trajectory."</strong> — Inverse kinematics, trajectory interpolation, obstacle avoidance. Operates at ~100 Hz. Bridges semantic goal to joint-level commands.</div>
+    </div>
+    <div class="h-level">
+      <div class="h-tag">Level 1 — Low-Level Control</div>
+      <div class="h-desc"><strong>"Apply this torque to joint 3 right now."</strong> — PID / impedance control at 1–5 kHz. Requires stability margins, bandwidth guarantees, noise rejection. <strong>Frequency-domain analysis lives here.</strong></div>
+    </div>
+  </div>
+  <div class="example-box">
+    <div class="label">🧠 VLA + Frequency Domain in Practice</div>
+    <p>A VLA model outputs a wrist position target at 10 Hz. This command must be tracked by the low-level joint controller. The controller's bandwidth must exceed 10 Hz, with adequate phase margin to remain stable under potentially jerky VLA outputs. Frequency-domain tools determine whether the low-level controller can faithfully execute the VLA's intentions without vibration, instability, or lag-induced oscillation.</p>
+  </div>
+  <div class="intuition">
+    <div class="label">💡 Delays Are Especially Dangerous in VLA Robots</div>
+    <p>A large vision-language model may take 50–200 ms to produce an action (inference latency). Every millisecond of delay adds phase lag: <span class="eq-inline">ΔΦ = −ω · T_delay</span>. A 100 ms delay at 10 Hz contributes −360° of phase lag — enough to completely destabilize a feedback loop. This is why VLA systems often use open-loop action chunking or separate high-bandwidth reflex layers that bypass the slow neural policy.</p>
+  </div>
+</section>
+
+<section id="takeaway">
+  <div class="takeaway">
+    <div class="section-label" style="color:var(--accent2);text-align:center;display:block;margin-bottom:1rem">§ Final Section — Main Takeaway</div>
+    <h2>The Whole Picture</h2>
+    <p><strong>Time-domain analysis</strong> tells us how a system behaves in time — transients, overshoot, settling, and trajectory tracking. It is physical and intuitive.</p>
+    <p><strong>Frequency-domain analysis</strong> tells us how the system treats different frequencies — bandwidth, resonance, noise rejection, phase lag, and stability margins. It reveals what time domain hides.</p>
+    <p>For robotics, <em>time domain shows whether motion looks correct</em>, while <em>frequency domain reveals robustness, noise sensitivity, bandwidth, delay effects, and stability margins.</em></p>
+    <p>Modern VLA robots may use neural networks for perception and decision-making, but their bodies still obey dynamics, delays, bandwidth limits, and feedback stability constraints. Classical control theory remains indispensable at the actuation layer — regardless of how intelligent the brain.</p>
+    <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+      <code class="eq" style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);text-align:center;white-space:normal;font-size:.85rem">
+        Time domain: y(t) — watch the movie &nbsp;|&nbsp; Frequency domain: G(jω) — read the spectrum &nbsp;|&nbsp; Together: understand the system
+      </code>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const PI = Math.PI;
+
+function getCanvas(id) {
+  const c = document.getElementById(id);
+  const dpr = window.devicePixelRatio || 1;
+  const W = c.offsetWidth || c.parentElement.offsetWidth || 700;
+  const H = parseInt(c.getAttribute('height')) || 260;
+  c.width = W * dpr;
+  c.height = H * dpr;
+  const ctx = c.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, W, H };
+}
+
+function drawGrid(ctx, W, H, pL, pR, pT, pB) {
+  ctx.strokeStyle = 'rgba(30,45,74,0.7)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 5; i++) {
+    const y = pT + (H - pT - pB) * i / 5;
+    ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(W - pR, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 8; i++) {
+    const x = pL + (W - pL - pR) * i / 8;
+    ctx.beginPath(); ctx.moveTo(x, pT); ctx.lineTo(x, H - pB); ctx.stroke();
+  }
+}
+
+// ── STEP RESPONSE ──
+function computeStep(zeta, wn, T, N) {
+  const dt = T / N;
+  const t = [], y = [];
+  let x = 0, xd = 0;
+  for (let i = 0; i < N; i++) {
+    t.push(i * dt); y.push(x);
+    const xdd = wn * wn * (1 - x) - 2 * zeta * wn * xd;
+    xd += xdd * dt; x += xd * dt;
+  }
+  return { t, y };
+}
+
+function drawStepResponse() {
+  const zeta = parseFloat(document.getElementById('zeta').value);
+  const wn = parseFloat(document.getElementById('wn').value);
+  document.getElementById('zeta-val').textContent = zeta.toFixed(2);
+  document.getElementById('wn-val').textContent = wn.toFixed(1);
+  const { ctx, W, H } = getCanvas('stepCanvas');
+  const pL = 52, pR = 18, pT = 18, pB = 32;
+  ctx.clearRect(0, 0, W, H);
+  drawGrid(ctx, W, H, pL, pR, pT, pB);
+  ctx.strokeStyle = '#1e2d4a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pL, pT); ctx.lineTo(pL, H - pB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pL, H - pB); ctx.lineTo(W - pR, H - pB); ctx.stroke();
+  const T = 15, N = 800;
+  const { t, y } = computeStep(zeta, wn, T, N);
+  const yMax = Math.max(1.55, Math.max(...y) + 0.08);
+  const yMin = Math.min(-0.18, Math.min(...y) - 0.04);
+  // axis labels
+  ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace";
+  ctx.textAlign = 'right';
+  for (let v = 0; v <= 1.5; v += 0.5) {
+    const py = H - pB - (v - yMin) / (yMax - yMin) * (H - pT - pB);
+    ctx.fillText(v.toFixed(1), pL - 5, py + 3);
+  }
+  ctx.textAlign = 'center';
+  for (let tv = 0; tv <= T; tv += 3) {
+    const px = pL + tv / T * (W - pL - pR);
+    ctx.fillText(tv + 's', px, H - pB + 14);
+  }
+  // reference line
+  const ry = H - pB - (1 - yMin) / (yMax - yMin) * (H - pT - pB);
+  ctx.strokeStyle = 'rgba(100,116,139,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(pL, ry); ctx.lineTo(W - pR, ry); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(100,116,139,0.6)'; ctx.font = "8px 'JetBrains Mono',monospace"; ctx.textAlign = 'left';
+  ctx.fillText('target = 1', pL + 4, ry - 3);
+  // curve
+  ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const px = pL + t[i] / T * (W - pL - pR);
+    const py = H - pB - (y[i] - yMin) / (yMax - yMin) * (H - pT - pB);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // axis labels
+  ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-PI / 2);
+  ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('y(t)', 0, 0); ctx.restore();
+  ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('time (s)', W / 2, H - 2);
+  // status
+  const el = document.getElementById('stepStatus');
+  let txt, col;
+  if (zeta < 1) { txt = `Underdamped (ζ=${zeta.toFixed(2)}) — oscillatory with overshoot`; col = '#60a5fa'; }
+  else if (zeta === 1) { txt = `Critically damped (ζ=1.00) — fastest no-overshoot response`; col = '#10b981'; }
+  else { txt = `Overdamped (ζ=${zeta.toFixed(2)}) — slow, no oscillation`; col = '#f59e0b'; }
+  el.textContent = `ω_n=${wn.toFixed(1)} rad/s  ζ=${zeta.toFixed(2)}  →  ${txt}`;
+  el.style.color = col;
+}
+
+// ── BODE ──
+function bode2(zeta, wn, w) {
+  const re = wn * wn - w * w;
+  const im = 2 * zeta * wn * w;
+  const mag = wn * wn / Math.sqrt(re * re + im * im);
+  const phase = -Math.atan2(im, re) * 180 / PI;
+  return { mag, phase };
+}
+
+function drawBode() {
+  const zeta = parseFloat(document.getElementById('bode-zeta').value);
+  const wn = parseFloat(document.getElementById('bode-wn').value);
+  document.getElementById('bode-zeta-val').textContent = zeta.toFixed(2);
+  document.getElementById('bode-wn-val').textContent = wn.toFixed(1);
+  const w0 = 0.05, w1 = 500, N = 600;
+  const wA = [], mA = [], pA = [];
+  for (let i = 0; i < N; i++) {
+    const w = w0 * Math.pow(w1 / w0, i / (N - 1));
+    const { mag, phase } = bode2(zeta, wn, w);
+    wA.push(w); mA.push(20 * Math.log10(mag)); pA.push(phase);
+  }
+  const toX = (w, W, pL, pR) => pL + Math.log10(w / w0) / Math.log10(w1 / w0) * (W - pL - pR);
+
+  // MAGNITUDE
+  {
+    const { ctx, W, H } = getCanvas('bodeMagCanvas');
+    const pL = 55, pR = 18, pT = 18, pB = 28;
+    ctx.clearRect(0, 0, W, H);
+    drawGrid(ctx, W, H, pL, pR, pT, pB);
+    ctx.strokeStyle = '#1e2d4a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pL, pT); ctx.lineTo(pL, H - pB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pL, H - pB); ctx.lineTo(W - pR, H - pB); ctx.stroke();
+    const dbMin = -60, dbMax = 30;
+    const toY = db => pT + (dbMax - db) / (dbMax - dbMin) * (H - pT - pB);
+    [-40, -20, 0, 20].forEach(db => {
+      const yy = toY(db);
+      ctx.strokeStyle = 'rgba(30,45,74,0.7)'; ctx.lineWidth = db === 0 ? 1 : 0.5;
+      ctx.setLineDash(db === 0 ? [] : [2, 3]);
+      ctx.beginPath(); ctx.moveTo(pL, yy); ctx.lineTo(W - pR, yy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'right';
+      ctx.fillText(db + 'dB', pL - 4, yy + 3);
+    });
+    [0.1, 1, 10, 100].forEach(wv => {
+      const xx = toX(wv, W, pL, pR);
+      ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+      ctx.fillText(wv, xx, H - pB + 14);
+    });
+    // -3dB line
+    const y3 = toY(-3);
+    ctx.strokeStyle = 'rgba(239,68,68,0.3)'; ctx.lineWidth = 0.8; ctx.setLineDash([2, 4]);
+    ctx.beginPath(); ctx.moveTo(pL, y3); ctx.lineTo(W - pR, y3); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(239,68,68,0.65)'; ctx.font = "8px 'JetBrains Mono',monospace"; ctx.textAlign = 'left';
+    ctx.fillText('−3 dB (bandwidth)', pL + 4, y3 - 3);
+    // wn line
+    const xWn = toX(wn, W, pL, pR);
+    ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(xWn, pT); ctx.lineTo(xWn, H - pB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(245,158,11,0.85)'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+    ctx.fillText('ω_n', xWn, pT + 10);
+    // curve
+    ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    wA.forEach((w, i) => { const x = toX(w, W, pL, pR), y = toY(mA[i]); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    ctx.stroke();
+    ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-PI / 2);
+    ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+    ctx.fillText('Gain (dB)', 0, 0); ctx.restore();
+    ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+    ctx.fillText('ω (rad/s)', W / 2, H);
+  }
+
+  // PHASE
+  {
+    const { ctx, W, H } = getCanvas('bodePhaseCanvas');
+    const pL = 55, pR = 18, pT = 14, pB = 28;
+    ctx.clearRect(0, 0, W, H);
+    drawGrid(ctx, W, H, pL, pR, pT, pB);
+    ctx.strokeStyle = '#1e2d4a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pL, pT); ctx.lineTo(pL, H - pB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pL, H - pB); ctx.lineTo(W - pR, H - pB); ctx.stroke();
+    const phMin = -200, phMax = 10;
+    const toY = ph => pT + (phMax - ph) / (phMax - phMin) * (H - pT - pB);
+    [-180, -90, 0].forEach(ph => {
+      const yy = toY(ph);
+      ctx.strokeStyle = ph === -180 ? 'rgba(239,68,68,0.25)' : 'rgba(30,45,74,0.7)';
+      ctx.lineWidth = 0.7; ctx.setLineDash(ph === -180 ? [3, 3] : []);
+      ctx.beginPath(); ctx.moveTo(pL, yy); ctx.lineTo(W - pR, yy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = ph === -180 ? 'rgba(239,68,68,0.7)' : '#64748b';
+      ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'right';
+      ctx.fillText(ph + '°', pL - 4, yy + 3);
+    });
+    ctx.fillStyle = 'rgba(239,68,68,0.5)'; ctx.font = "8px 'JetBrains Mono',monospace"; ctx.textAlign = 'left';
+    ctx.fillText('instability boundary', pL + 4, toY(-180) - 3);
+    [0.1, 1, 10, 100].forEach(wv => {
+      ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+      ctx.fillText(wv, toX(wv, W, pL, pR), H - pB + 14);
+    });
+    const xWn = toX(wn, W, pL, pR);
+    ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(xWn, pT); ctx.lineTo(xWn, H - pB); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = '#8b5cf6'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    wA.forEach((w, i) => { const x = toX(w, W, pL, pR), y = toY(pA[i]); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    ctx.stroke();
+    ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-PI / 2);
+    ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+    ctx.fillText('Phase (°)', 0, 0); ctx.restore();
+    ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+    ctx.fillText('ω (rad/s)', W / 2, H);
+  }
+
+  const peak = Math.max(...mA);
+  const el = document.getElementById('bodeStatus');
+  if (zeta < 0.5) { el.textContent = `Resonance peak: ${peak.toFixed(1)} dB near ω_n — low ζ causes dangerous amplification`; el.style.color = '#f59e0b'; }
+  else if (zeta < 1) { el.textContent = `Moderate peaking: ${peak.toFixed(1)} dB — underdamped but controlled`; el.style.color = '#60a5fa'; }
+  else { el.textContent = `No resonance — overdamped system monotonically rolls off`; el.style.color = '#10b981'; }
+}
+
+// ── MSD ──
+function drawMSD() {
+  const zeta = parseFloat(document.getElementById('msd-zeta').value);
+  const wn = parseFloat(document.getElementById('msd-wn').value);
+  document.getElementById('msd-zeta-val').textContent = zeta.toFixed(2);
+  document.getElementById('msd-wn-val').textContent = wn.toFixed(1);
+  const { ctx, W, H } = getCanvas('msdCanvas');
+  const pL = 55, pR = 18, pT = 18, pB = 32;
+  ctx.clearRect(0, 0, W, H);
+  drawGrid(ctx, W, H, pL, pR, pT, pB);
+  ctx.strokeStyle = '#1e2d4a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pL, pT); ctx.lineTo(pL, H - pB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pL, H - pB); ctx.lineTo(W - pR, H - pB); ctx.stroke();
+  const w0 = 0.1, w1 = 200, N = 600;
+  const wA = [], mA = [];
+  for (let i = 0; i < N; i++) {
+    const w = w0 * Math.pow(w1 / w0, i / (N - 1));
+    const re = wn * wn - w * w, im = 2 * zeta * wn * w;
+    const mag = wn * wn / Math.sqrt(re * re + im * im);
+    wA.push(w); mA.push(20 * Math.log10(mag));
+  }
+  const dbMin = -60, dbMax = 40;
+  const toX = w => pL + Math.log10(w / w0) / Math.log10(w1 / w0) * (W - pL - pR);
+  const toY = db => pT + (dbMax - db) / (dbMax - dbMin) * (H - pT - pB);
+  [-40, -20, 0, 20, 40].forEach(db => {
+    const yy = toY(db);
+    ctx.strokeStyle = 'rgba(30,45,74,0.6)'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pL, yy); ctx.lineTo(W - pR, yy); ctx.stroke();
+    ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'right';
+    ctx.fillText(db + 'dB', pL - 4, yy + 3);
+  });
+  [0.1, 1, 10, 100].forEach(wv => {
+    ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+    ctx.fillText(wv, toX(wv), H - pB + 14);
+  });
+  const peak = Math.max(...mA);
+  const peakIdx = mA.indexOf(peak);
+  if (peak > 0) {
+    const y0 = toY(0);
+    ctx.fillStyle = 'rgba(239,68,68,0.08)';
+    ctx.beginPath();
+    const iS = Math.max(0, peakIdx - 60), iE = Math.min(N - 1, peakIdx + 60);
+    ctx.moveTo(toX(wA[iS]), y0);
+    for (let i = iS; i <= iE; i++) ctx.lineTo(toX(wA[i]), toY(mA[i]));
+    ctx.lineTo(toX(wA[iE]), y0); ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = '#10b981'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  wA.forEach((w, i) => { const x = toX(w), y = toY(mA[i]); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+  ctx.stroke();
+  const xWn = toX(wn);
+  ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(xWn, pT); ctx.lineTo(xWn, H - pB); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(245,158,11,0.9)'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('resonance ω_n=' + wn, xWn, pT + 11);
+  ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-PI / 2);
+  ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('|G(jω)| dB', 0, 0); ctx.restore();
+  ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('ω (rad/s)', W / 2, H - 2);
+  const el = document.getElementById('msdStatus');
+  if (zeta < 0.3) { el.textContent = `Peak: ${peak.toFixed(1)} dB — very low damping, dangerous amplification near ω_n=${wn} rad/s`; el.style.color = '#ef4444'; }
+  else if (zeta < 0.7) { el.textContent = `Moderate peak: ${peak.toFixed(1)} dB — some amplification near resonance`; el.style.color = '#f59e0b'; }
+  else { el.textContent = `No resonance peak — well-damped system, safe across all frequencies`; el.style.color = '#10b981'; }
+}
+
+// ── EVENTS ──
+['zeta','wn'].forEach(id => document.getElementById(id).addEventListener('input', drawStepResponse));
+['bode-zeta','bode-wn'].forEach(id => document.getElementById(id).addEventListener('input', drawBode));
+['msd-zeta','msd-wn'].forEach(id => document.getElementById(id).addEventListener('input', drawMSD));
+
+let rt;
+window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawStepResponse(); drawBode(); drawMSD(); }, 120); });
+
+window.addEventListener('load', () => { drawStepResponse(); drawBode(); drawMSD(); });
+</script>
+</body>
+</html>
