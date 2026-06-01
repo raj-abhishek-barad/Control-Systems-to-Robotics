@@ -76,6 +76,16 @@ canvas{width:100%;border-radius:6px;background:#080c16;display:block}
 .takeaway::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,.08) 0%,transparent 70%);pointer-events:none}
 .takeaway h2{font-size:1.6rem;margin-bottom:1.5rem;color:var(--accent2)}
 .takeaway p{font-size:1rem;max-width:680px;margin:0 auto .8rem;color:var(--text2)}
+
+.paper-card{background:linear-gradient(135deg,rgba(245,158,11,.06) 0%,rgba(59,130,246,.04) 100%);border:1px solid rgba(245,158,11,.22);border-radius:10px;padding:1.5rem 1.75rem;margin:1.5rem 0}
+.paper-meta{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:.55rem}
+.paper-title{font-family:var(--display);font-size:1.25rem;color:#fff;margin-bottom:.5rem;line-height:1.25}
+.citation-line{font-family:var(--mono);font-size:.72rem;color:var(--text3);margin-top:.8rem}
+.method-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.8rem;margin:1.5rem 0}
+.flow-step{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:.9rem}
+.flow-step .num{font-family:var(--mono);font-size:.65rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:.35rem}
+.flow-step strong{display:block;margin-bottom:.25rem}
+
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -110,6 +120,7 @@ canvas{width:100%;border-radius:6px;background:#080c16;display:block}
     <li><a href="#compare">Comparison</a></li>
     <li><a href="#rc">RC Circuit</a></li>
     <li><a href="#msd">Mass-Spring</a></li>
+    <li><a href="#input-shaping">Input Shaping</a></li>
     <li><a href="#robot">Robot Joint</a></li>
     <li><a href="#vla">VLA Systems</a></li>
     <li><a href="#takeaway">Takeaway</a></li>
@@ -377,6 +388,74 @@ canvas{width:100%;border-radius:6px;background:#080c16;display:block}
     <p>When a robot arm applies forces near the natural frequency of a coupled load (e.g., a flexible link or payload on a spring mount), those forces are amplified by resonance. In time domain, this appears as violent oscillation that builds up. Frequency domain reveals the exact danger zone frequency and required damping.</p>
   </div>
 </section>
+
+
+<section id="input-shaping">
+  <div class="section-label">§ 9.5 — Paper Bridge: Input Shaping for Flexible Robot Arms</div>
+  <h2>How the 2025 Input-Shaping Paper Uses the Same Frequency-Domain Idea</h2>
+  <p>The paper <strong>“Data Driven Approach to Input Shaping for Vibration Suppression in a Flexible Robot Arm”</strong> is a direct continuation of the mass-spring-damper story above. The system is no longer an abstract mass attached to a spring; it is a flexible robot arm whose residual vibration changes across the workspace. The central idea is still the same: identify the vibration frequency, then modify the command so the robot does not excite that mode.</p>
+
+  <div class="paper-card">
+    <div class="paper-meta">Recent robotics paper — RoboSoft 2025 / arXiv:2506.14405</div>
+    <div class="paper-title">Data Driven Approach to Input Shaping for Vibration Suppression in a Flexible Robot Arm</div>
+    <p>The paper treats input shaping as a command-prefiltering method. The desired command is convolved with a short impulse sequence. These impulses are timed so that the elastic wave excited by one part of the command is cancelled by the next part. The novelty is that the shaper parameters are tuned from measured residual-vibration data across the robot workspace, instead of assuming one fixed vibration model everywhere.</p>
+    <div class="citation-line">Use in this page: Bode resonance peak → vibration frequency estimate → input-shaper timing.</div>
+  </div>
+
+  <h3>From Bode Peak to Input Shaper</h3>
+  <p>For a lightly damped flexible mode, the transfer function is again approximately second order:</p>
+  <code class="eq">G(s) = ω_n² / (s² + 2ζω_n s + ω_n²)</code>
+  <p>The Bode magnitude plot shows a resonance peak near <span class="eq-inline">ω_n</span>. Input shaping then constructs a modified command:</p>
+  <code class="eq">u_shaped(t) = A₁u(t) + A₂u(t − t_d)</code>
+  <p>For a zero-vibration shaper, the two weights and delay are chosen as:</p>
+  <code class="eq">K = exp(−ζπ / √(1−ζ²)),   A₁ = 1/(1+K),   A₂ = K/(1+K),   t_d = π / (ω_n√(1−ζ²))</code>
+
+  <div class="method-flow">
+    <div class="flow-step">
+      <div class="num">Step 1</div>
+      <strong>Measure vibration</strong>
+      <p>Move the arm and record residual oscillation from motion or sensor data.</p>
+    </div>
+    <div class="flow-step">
+      <div class="num">Step 2</div>
+      <strong>Estimate the flexible mode</strong>
+      <p>Extract the dominant vibration frequency and damping ratio.</p>
+    </div>
+    <div class="flow-step">
+      <div class="num">Step 3</div>
+      <strong>Build the input shaper</strong>
+      <p>Choose impulse amplitudes and delay so the flexible response cancels.</p>
+    </div>
+    <div class="flow-step">
+      <div class="num">Step 4</div>
+      <strong>Interpolate across workspace</strong>
+      <p>Use measured data at several poses to tune the shaper for new poses.</p>
+    </div>
+  </div>
+
+  <div class="interactive-panel">
+    <div class="panel-title">Interactive — Zero-Vibration Input Shaping</div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Damping ratio ζ <span id="shape-zeta-val">0.05</span></label>
+        <input type="range" id="shape-zeta" min="0.02" max="0.40" step="0.01" value="0.05">
+      </div>
+      <div class="control-group">
+        <label>Natural freq f_n <span id="shape-fn-val">2.0</span> Hz</label>
+        <input type="range" id="shape-fn" min="0.5" max="6.0" step="0.1" value="2.0">
+      </div>
+    </div>
+    <canvas id="shapeCanvas" height="270"></canvas>
+    <div class="canvas-label">Flexible-arm step response: unshaped command excites resonance; shaped command cancels residual vibration.</div>
+    <div class="status-text" id="shapeStatus">Input shaper parameters will appear here.</div>
+  </div>
+
+  <div class="intuition">
+    <div class="label">💡 How this relates to the earlier sections</div>
+    <p>The time-domain plot shows the arm shaking after a motion command. The frequency-domain plot tells us why: the command injected energy near the flexible mode. The input-shaping paper closes the loop pedagogically: once the dangerous frequency is known, the command itself can be redesigned to avoid exciting it.</p>
+  </div>
+</section>
+
 
 <section id="robot">
   <div class="section-label">§ 10 — Example 3: Robot Joint Control</div>
@@ -770,15 +849,143 @@ function drawMSD() {
   else { el.textContent = `No resonance peak — well-damped system, safe across all frequencies`; el.style.color = '#10b981'; }
 }
 
+
+// ── INPUT SHAPING PAPER DEMO ──
+function computeFlexibleResponse(zeta, fn, shaped) {
+  const wn = 2 * Math.PI * fn;
+  const wd = wn * Math.sqrt(1 - zeta * zeta);
+  const K = Math.exp(-zeta * Math.PI / Math.sqrt(1 - zeta * zeta));
+  const A1 = 1 / (1 + K);
+  const A2 = K / (1 + K);
+  const td = Math.PI / wd;
+
+  const T = 6.0, N = 900, dt = T / (N - 1);
+  let x = 0, v = 0;
+  const t = [], y = [], uarr = [];
+
+  function command(tt) {
+    if (!shaped) return 1.0;
+    return A1 + (tt >= td ? A2 : 0.0);
+  }
+
+  function acc(xx, vv, uu) {
+    return wn * wn * (uu - xx) - 2 * zeta * wn * vv;
+  }
+
+  for (let i = 0; i < N; i++) {
+    const tt = i * dt;
+    t.push(tt); y.push(x); uarr.push(command(tt));
+
+    // RK4 for x' = v, v' = acc(x,v,u(t))
+    const u1 = command(tt);
+    const k1x = v, k1v = acc(x, v, u1);
+
+    const u2 = command(tt + 0.5 * dt);
+    const k2x = v + 0.5 * dt * k1v;
+    const k2v = acc(x + 0.5 * dt * k1x, v + 0.5 * dt * k1v, u2);
+
+    const k3x = v + 0.5 * dt * k2v;
+    const k3v = acc(x + 0.5 * dt * k2x, v + 0.5 * dt * k2v, u2);
+
+    const u4 = command(tt + dt);
+    const k4x = v + dt * k3v;
+    const k4v = acc(x + dt * k3x, v + dt * k3v, u4);
+
+    x += dt * (k1x + 2*k2x + 2*k3x + k4x) / 6;
+    v += dt * (k1v + 2*k2v + 2*k3v + k4v) / 6;
+  }
+
+  return { t, y, uarr, A1, A2, td };
+}
+
+function drawInputShaping() {
+  const zeta = parseFloat(document.getElementById('shape-zeta').value);
+  const fn = parseFloat(document.getElementById('shape-fn').value);
+  document.getElementById('shape-zeta-val').textContent = zeta.toFixed(2);
+  document.getElementById('shape-fn-val').textContent = fn.toFixed(1);
+
+  const un = computeFlexibleResponse(zeta, fn, false);
+  const sh = computeFlexibleResponse(zeta, fn, true);
+
+  const { ctx, W, H } = getCanvas('shapeCanvas');
+  const pL = 55, pR = 18, pT = 18, pB = 34;
+  ctx.clearRect(0, 0, W, H);
+  drawGrid(ctx, W, H, pL, pR, pT, pB);
+
+  const yAll = un.y.concat(sh.y);
+  const yMin = Math.min(-0.10, Math.min(...yAll) - 0.05);
+  const yMax = Math.max(1.45, Math.max(...yAll) + 0.08);
+  const T = 6.0;
+  const toX = tt => pL + tt / T * (W - pL - pR);
+  const toY = yy => H - pB - (yy - yMin) / (yMax - yMin) * (H - pT - pB);
+
+  ctx.strokeStyle = '#1e2d4a'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pL, pT); ctx.lineTo(pL, H - pB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pL, H - pB); ctx.lineTo(W - pR, H - pB); ctx.stroke();
+
+  // labels
+  ctx.fillStyle = '#64748b'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'right';
+  [0, 0.5, 1.0, 1.5].forEach(v => {
+    if (v >= yMin && v <= yMax) ctx.fillText(v.toFixed(1), pL - 5, toY(v) + 3);
+  });
+  ctx.textAlign = 'center';
+  [0, 1, 2, 3, 4, 5, 6].forEach(tv => ctx.fillText(tv + 's', toX(tv), H - pB + 14));
+
+  // target
+  ctx.strokeStyle = 'rgba(100,116,139,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(pL, toY(1.0)); ctx.lineTo(W - pR, toY(1.0)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // shaper delay line
+  ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(toX(sh.td), pT); ctx.lineTo(toX(sh.td), H - pB); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(245,158,11,0.9)'; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('t_d', toX(sh.td), pT + 10);
+
+  function drawCurve(data, color) {
+    ctx.strokeStyle = color; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    data.t.forEach((tt, i) => {
+      const x = toX(tt), y = toY(data.y[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  drawCurve(un, '#ef4444');
+  drawCurve(sh, '#10b981');
+
+  // legend
+  ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'left';
+  ctx.fillStyle = '#ef4444'; ctx.fillText('unshaped response', pL + 8, pT + 16);
+  ctx.fillStyle = '#10b981'; ctx.fillText('ZV-shaped response', pL + 8, pT + 31);
+
+  ctx.save(); ctx.translate(13, H / 2); ctx.rotate(-PI / 2);
+  ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('output displacement', 0, 0); ctx.restore();
+  ctx.fillStyle = '#94a3b8'; ctx.font = "10px 'JetBrains Mono',monospace"; ctx.textAlign = 'center';
+  ctx.fillText('time (s)', W / 2, H - 2);
+
+  // residual after 2s
+  const idx0 = un.t.findIndex(tt => tt >= 2.0);
+  const resUn = Math.max(...un.y.slice(idx0).map(v => Math.abs(v - 1)));
+  const resSh = Math.max(...sh.y.slice(idx0).map(v => Math.abs(v - 1)));
+  const status = document.getElementById('shapeStatus');
+  status.textContent = `ZV shaper: A₁=${sh.A1.toFixed(3)}, A₂=${sh.A2.toFixed(3)}, delay t_d=${sh.td.toFixed(3)}s. Residual vibration after 2s: unshaped=${resUn.toFixed(3)}, shaped=${resSh.toFixed(4)}.`;
+  status.style.color = '#10b981';
+}
+
 // ── EVENTS ──
 ['zeta','wn'].forEach(id => document.getElementById(id).addEventListener('input', drawStepResponse));
 ['bode-zeta','bode-wn'].forEach(id => document.getElementById(id).addEventListener('input', drawBode));
 ['msd-zeta','msd-wn'].forEach(id => document.getElementById(id).addEventListener('input', drawMSD));
+['shape-zeta','shape-fn'].forEach(id => document.getElementById(id).addEventListener('input', drawInputShaping));
 
 let rt;
-window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawStepResponse(); drawBode(); drawMSD(); }, 120); });
+window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawStepResponse(); drawBode(); drawMSD(); drawInputShaping(); }, 120); });
 
-window.addEventListener('load', () => { drawStepResponse(); drawBode(); drawMSD(); });
+window.addEventListener('load', () => { drawStepResponse(); drawBode(); drawMSD(); drawInputShaping(); });
 </script>
 </body>
 </html>
